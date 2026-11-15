@@ -1,0 +1,412 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#101522" />
+  <title>OgiOS</title>
+  <style>
+    :root {
+      --accent: #8b9cff;
+      --panel: rgba(20, 27, 43, .88);
+      --panel-solid: #171f31;
+      --text: #f4f6ff;
+      --muted: #aab3c8;
+      --line: rgba(255,255,255,.12);
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; min-height: 100vh; overflow: hidden;
+      color: var(--text); font-family: Inter, ui-sans-serif, system-ui, Arial, sans-serif;
+      background: #101522;
+      user-select: none;
+    }
+    button, input, textarea { font: inherit; }
+    button { color: inherit; cursor: pointer; }
+    #desktop {
+      position: relative; width: 100vw; height: 100vh; overflow: hidden;
+      background:
+        radial-gradient(ellipse at 18% 18%, rgba(87,112,190,.42), transparent 38%),
+        radial-gradient(ellipse at 85% 75%, rgba(43,135,145,.28), transparent 36%),
+        linear-gradient(135deg, #111827 0%, #17233b 52%, #101a2b 100%);
+    }
+    .desktop-label {
+      position: absolute; top: 24px; left: 26px; color: rgba(255,255,255,.8);
+      font-size: 13px; letter-spacing: .18em; font-weight: 700;
+    }
+    .desktop-icons {
+      position: absolute; top: 70px; left: 18px; display: grid; gap: 16px;
+    }
+    .desktop-icon {
+      width: 76px; min-height: 76px; padding: 8px 4px; border: 1px solid transparent;
+      border-radius: 12px; background: transparent; display: grid; justify-items: center;
+      gap: 5px; font-size: 11px; color: #eef1ff;
+    }
+    .desktop-icon:hover, .desktop-icon:focus-visible { background: rgba(255,255,255,.12); border-color: var(--line); outline: none; }
+    .icon-art { font-size: 27px; filter: drop-shadow(0 3px 8px rgba(0,0,0,.25)); }
+    #windows { position: absolute; inset: 0 0 58px; pointer-events: none; }
+    .window {
+      position: absolute; top: 90px; left: 110px; width: min(560px, calc(100vw - 34px));
+      height: min(390px, calc(100vh - 100px)); min-width: 270px; min-height: 190px;
+      border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+      background: var(--panel); backdrop-filter: blur(22px);
+      box-shadow: 0 24px 70px rgba(0,0,0,.38); pointer-events: auto;
+      display: flex; flex-direction: column;
+    }
+    .window.maximized { inset: 10px 10px 10px 10px !important; width: auto !important; height: auto !important; }
+    .titlebar {
+      height: 43px; flex: 0 0 43px; display: flex; align-items: center; justify-content: space-between;
+      padding: 0 10px 0 14px; background: rgba(255,255,255,.055); border-bottom: 1px solid var(--line);
+      cursor: grab; touch-action: none;
+    }
+    .titlebar:active { cursor: grabbing; }
+    .window-title { font-size: 12px; font-weight: 700; letter-spacing: .02em; }
+    .window-controls { display: flex; gap: 5px; }
+    .window-controls button {
+      width: 27px; height: 25px; border: 0; border-radius: 7px; background: rgba(255,255,255,.08);
+    }
+    .window-controls button:hover { background: rgba(255,255,255,.18); }
+    .window-controls .close:hover { background: #d84c61; }
+    .window-content { padding: 17px; overflow: auto; flex: 1; user-select: text; }
+    .muted { color: var(--muted); }
+    .app-heading { margin: 0 0 7px; font-size: 19px; }
+    .app-sub { margin: 0 0 18px; color: var(--muted); font-size: 12px; }
+    .notes-area {
+      width: 100%; height: 220px; resize: none; color: var(--text);
+      background: rgba(0,0,0,.18); border: 1px solid var(--line); border-radius: 10px;
+      padding: 12px; outline: none;
+    }
+    .notes-area:focus, .calc-display:focus { border-color: var(--accent); }
+    .calc { max-width: 310px; margin: auto; }
+    .calc-display {
+      width: 100%; height: 54px; margin-bottom: 10px; padding: 10px;
+      text-align: right; color: var(--text); background: rgba(0,0,0,.24);
+      border: 1px solid var(--line); border-radius: 10px; font-size: 23px;
+    }
+    .calc-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px; }
+    .calc-grid button {
+      min-height: 47px; border: 1px solid var(--line); border-radius: 9px;
+      background: rgba(255,255,255,.08); font-size: 15px;
+    }
+    .calc-grid button:hover { background: rgba(255,255,255,.17); }
+    .calc-grid .equals { background: var(--accent); color: #111827; font-weight: 800; }
+    .settings-row { display: flex; align-items: center; justify-content: space-between; padding: 13px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+    .settings-row button, .primary-btn {
+      border: 0; border-radius: 8px; padding: 8px 12px; background: var(--accent); color: #101522; font-weight: 700;
+    }
+    #taskbar {
+      position: absolute; bottom: 0; left: 0; right: 0; height: 58px; display: flex; align-items: center;
+      padding: 0 14px; gap: 10px; background: rgba(10,14,24,.72); backdrop-filter: blur(22px);
+      border-top: 1px solid rgba(255,255,255,.1);
+    }
+    #start-button, .task-app {
+      border: 1px solid transparent; background: rgba(255,255,255,.08); border-radius: 10px;
+      min-width: 42px; height: 40px; padding: 0 12px;
+    }
+    #start-button { font-weight: 800; letter-spacing: -.04em; }
+    #start-button:hover, .task-app:hover { background: rgba(255,255,255,.16); }
+    #task-apps { display: flex; gap: 6px; flex: 1; overflow-x: auto; }
+    .task-app { min-width: 40px; padding: 0 10px; font-size: 12px; }
+    .task-app.active { border-color: var(--accent); background: rgba(139,156,255,.18); }
+    #clock { min-width: 74px; text-align: right; font-size: 11px; line-height: 1.5; color: #e9edff; }
+    #start-menu {
+      position: absolute; z-index: 9999; bottom: 68px; left: 14px; width: min(310px, calc(100vw - 28px));
+      padding: 14px; border: 1px solid var(--line); border-radius: 15px;
+      background: var(--panel-solid); box-shadow: 0 18px 55px rgba(0,0,0,.42);
+      display: none;
+    }
+    #start-menu.open { display: block; }
+    .start-top { padding: 5px 5px 13px; border-bottom: 1px solid var(--line); margin-bottom: 8px; }
+    .start-top strong { display: block; font-size: 17px; }
+    .start-top small { color: var(--muted); }
+    .start-app {
+      width: 100%; display: flex; align-items: center; gap: 11px; padding: 10px;
+      border: 0; border-radius: 9px; background: transparent; text-align: left; font-size: 13px;
+    }
+    .start-app:hover { background: rgba(255,255,255,.1); }
+    #toast {
+      position: absolute; right: 16px; bottom: 72px; padding: 10px 13px;
+      border: 1px solid var(--line); border-radius: 10px; background: var(--panel-solid);
+      color: var(--text); font-size: 12px; opacity: 0; transform: translateY(8px);
+      transition: .2s; pointer-events: none;
+    }
+    #toast.show { opacity: 1; transform: translateY(0); }
+    @media (max-width: 600px) {
+      .desktop-label { top: 17px; left: 17px; }
+      .desktop-icons { top: 58px; left: 8px; gap: 8px; }
+      .desktop-icon { width: 67px; min-height: 68px; }
+      .window { top: 78px; left: 12px; width: calc(100vw - 24px); height: min(430px, calc(100vh - 155px)); }
+      #taskbar { padding: 0 8px; gap: 6px; }
+      #clock { min-width: 64px; }
+    }
+  </style>
+</head>
+<body>
+  <main id="desktop">
+    <div class="desktop-label">OGIOS <span style="font-weight:400;opacity:.6">/ PERSONAL SPACE</span></div>
+    <div class="desktop-icons">
+      <button class="desktop-icon" data-app="notes"><span class="icon-art">📝</span><span>OgiNotes</span></button>
+      <button class="desktop-icon" data-app="calculator"><span class="icon-art">🧮</span><span>Calculator</span></button>
+      <button class="desktop-icon" data-app="files"><span class="icon-art">📁</span><span>OgiFiles</span></button>
+      <button class="desktop-icon" data-app="settings"><span class="icon-art">⚙️</span><span>Settings</span></button>
+    </div>
+
+    <section id="windows" aria-label="Area aplikasi"></section>
+
+    <nav id="taskbar">
+      <button id="start-button" aria-label="Buka Start Menu">◈ Ogi</button>
+      <div id="task-apps"></div>
+      <div id="clock"></div>
+    </nav>
+
+    <section id="start-menu">
+      <div class="start-top"><strong>OgiOS</strong><small>Personal Web Environment · v0.1</small></div>
+      <button class="start-app" data-app="notes"><span>📝</span> OgiNotes</button>
+      <button class="start-app" data-app="calculator"><span>🧮</span> Calculator</button>
+      <button class="start-app" data-app="files"><span>📁</span> OgiFiles</button>
+      <button class="start-app" data-app="settings"><span>⚙️</span> Settings</button>
+    </section>
+    <div id="toast" role="status"></div>
+  </main>
+
+  <script>
+    const windowsArea = document.getElementById('windows');
+    const taskApps = document.getElementById('task-apps');
+    const startMenu = document.getElementById('start-menu');
+    const openWindows = new Map();
+    let topZ = 10;
+    let windowCount = 0;
+
+    const appInfo = {
+      notes: { title: 'OgiNotes', icon: '📝', width: 460, height: 350 },
+      calculator: { title: 'Calculator', icon: '🧮', width: 340, height: 390 },
+      files: { title: 'OgiFiles', icon: '📁', width: 440, height: 330 },
+      settings: { title: 'Settings', icon: '⚙️', width: 430, height: 340 }
+    };
+
+    function showToast(message) {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.classList.add('show');
+      clearTimeout(showToast.timer);
+      showToast.timer = setTimeout(() => toast.classList.remove('show'), 1900);
+    }
+
+    function appContent(id) {
+      if (id === 'notes') {
+        return `<h2 class="app-heading">OgiNotes</h2>
+          <p class="app-sub">Catatan tersimpan otomatis di perangkat ini.</p>
+          <textarea class="notes-area" id="notes-input" placeholder="Tulis ide atau catatanmu..."></textarea>
+          <p class="muted" style="font-size:11px;margin-top:8px" id="notes-status">Autosave aktif</p>`;
+      }
+      if (id === 'calculator') {
+        return `<div class="calc">
+          <h2 class="app-heading">Calculator</h2><p class="app-sub">Kalkulator sederhana OgiOS.</p>
+          <input class="calc-display" id="calc-display" value="0" readonly />
+          <div class="calc-grid">
+            <button data-key="C">C</button><button data-key="(">(</button><button data-key=")">)</button><button data-key="/">÷</button>
+            <button data-key="7">7</button><button data-key="8">8</button><button data-key="9">9</button><button data-key="*">×</button>
+            <button data-key="4">4</button><button data-key="5">5</button><button data-key="6">6</button><button data-key="-">−</button>
+            <button data-key="1">1</button><button data-key="2">2</button><button data-key="3">3</button><button data-key="+">+</button>
+            <button data-key="0">0</button><button data-key=".">.</button><button data-key="back">⌫</button><button class="equals" data-key="=">=</button>
+          </div></div>`;
+      }
+      if (id === 'files') {
+        return `<h2 class="app-heading">OgiFiles</h2>
+          <p class="app-sub">Ruang file lokal OgiOS (versi awal).</p>
+          <div style="padding:14px;border:1px solid var(--line);border-radius:10px;background:rgba(255,255,255,.04)">
+            <div style="font-size:28px;margin-bottom:8px">📂</div>
+            <strong>My Workspace</strong><p class="muted" style="font-size:12px;margin-bottom:0">File manager lengkap akan dibuat pada tahap berikutnya.</p>
+          </div>`;
+      }
+      return `<h2 class="app-heading">Settings</h2>
+        <p class="app-sub">Atur tampilan dasar OgiOS.</p>
+        <div class="settings-row"><span>Mode tampilan</span><button id="theme-toggle">Ganti tema</button></div>
+        <div class="settings-row"><span>Versi sistem</span><strong>0.1 Alpha</strong></div>
+        <div class="settings-row"><span>Nama sistem</span><strong>OgiOS</strong></div>
+        <p class="muted" style="font-size:11px;margin-top:16px">Pengaturan tambahan akan hadir pada pembaruan berikutnya.</p>`;
+    }
+
+    function openApp(id) {
+      startMenu.classList.remove('open');
+      if (!appInfo[id]) return;
+      const existing = openWindows.get(id);
+      if (existing) {
+        existing.style.display = 'flex';
+        focusWindow(existing);
+        return;
+      }
+
+      windowCount++;
+      const info = appInfo[id];
+      const win = document.createElement('article');
+      win.className = 'window';
+      win.dataset.app = id;
+      win.style.width = `min(${info.width}px, calc(100vw - 24px))`;
+      win.style.height = `min(${info.height}px, calc(100vh - 120px))`;
+      win.style.left = `${Math.max(12, 90 + (windowCount - 1) * 24)}px`;
+      win.style.top = `${Math.max(55, 75 + (windowCount - 1) * 20)}px`;
+      win.style.zIndex = ++topZ;
+      win.innerHTML = `<header class="titlebar">
+        <span class="window-title">${info.icon} &nbsp; ${info.title}</span>
+        <div class="window-controls">
+          <button class="minimize" aria-label="Minimize">−</button>
+          <button class="maximize" aria-label="Maximize">□</button>
+          <button class="close" aria-label="Close">×</button>
+        </div>
+      </header><div class="window-content">${appContent(id)}</div>`;
+
+      windowsArea.appendChild(win);
+      openWindows.set(id, win);
+      addTaskButton(id, info);
+      focusWindow(win);
+      setupWindow(win, id);
+      setupApp(id, win);
+    }
+
+    function addTaskButton(id, info) {
+      const btn = document.createElement('button');
+      btn.className = 'task-app active';
+      btn.dataset.app = id;
+      btn.textContent = `${info.icon} ${info.title}`;
+      btn.addEventListener('click', () => {
+        const win = openWindows.get(id);
+        if (win.style.display === 'none') win.style.display = 'flex';
+        focusWindow(win);
+      });
+      taskApps.appendChild(btn);
+    }
+
+    function focusWindow(win) {
+      topZ++;
+      win.style.zIndex = topZ;
+      document.querySelectorAll('.task-app').forEach(btn => {
+        btn.classList.toggle('active', btn.dataset.app === win.dataset.app);
+      });
+    }
+
+    function closeApp(id) {
+      const win = openWindows.get(id);
+      if (win) win.remove();
+      openWindows.delete(id);
+      document.querySelector(`.task-app[data-app="${id}"]`)?.remove();
+    }
+
+    function setupWindow(win, id) {
+      win.addEventListener('pointerdown', () => focusWindow(win));
+      win.querySelector('.close').addEventListener('click', () => closeApp(id));
+      win.querySelector('.minimize').addEventListener('click', () => {
+        win.style.display = 'none';
+        document.querySelector(`.task-app[data-app="${id}"]`)?.classList.remove('active');
+      });
+      win.querySelector('.maximize').addEventListener('click', () => {
+        win.classList.toggle('maximized');
+      });
+
+      const bar = win.querySelector('.titlebar');
+      let startX, startY, startLeft, startTop, dragging = false;
+      bar.addEventListener('pointerdown', (e) => {
+        if (e.target.closest('button') || win.classList.contains('maximized')) return;
+        dragging = true;
+        startX = e.clientX; startY = e.clientY;
+        startLeft = win.offsetLeft; startTop = win.offsetTop;
+        bar.setPointerCapture(e.pointerId);
+      });
+      bar.addEventListener('pointermove', (e) => {
+        if (!dragging) return;
+        const maxLeft = Math.max(0, window.innerWidth - 100);
+        const maxTop = Math.max(0, window.innerHeight - 100);
+        win.style.left = `${Math.min(maxLeft, Math.max(0, startLeft + e.clientX - startX))}px`;
+        win.style.top = `${Math.min(maxTop, Math.max(0, startTop + e.clientY - startY))}px`;
+      });
+      bar.addEventListener('pointerup', () => dragging = false);
+      bar.addEventListener('pointercancel', () => dragging = false);
+    }
+
+    function setupApp(id, win) {
+      if (id === 'notes') {
+        const area = win.querySelector('#notes-input');
+        area.value = localStorage.getItem('ogios-notes') || '';
+        area.addEventListener('input', () => {
+          localStorage.setItem('ogios-notes', area.value);
+          win.querySelector('#notes-status').textContent = 'Tersimpan otomatis ✓';
+        });
+      }
+      if (id === 'calculator') {
+        const display = win.querySelector('#calc-display');
+        let expression = '';
+        win.querySelectorAll('[data-key]').forEach(button => {
+          button.addEventListener('click', () => {
+            const key = button.dataset.key;
+            if (key === 'C') expression = '';
+            else if (key === 'back') expression = expression.slice(0, -1);
+            else if (key === '=') {
+              try {
+                if (!/^[0-9+\-*/().\s]+$/.test(expression) || !expression) throw new Error();
+                const result = Function(`"use strict"; return (${expression})`)();
+                if (!Number.isFinite(result)) throw new Error();
+                expression = String(Number(result.toFixed(8)));
+              } catch { expression = 'Error'; }
+            } else {
+              if (expression === 'Error') expression = '';
+              expression += key;
+            }
+            display.value = expression || '0';
+          });
+        });
+      }
+      if (id === 'settings') {
+        win.querySelector('#theme-toggle').addEventListener('click', toggleTheme);
+      }
+    }
+
+    function toggleTheme() {
+      const light = document.body.dataset.theme !== 'light';
+      document.body.dataset.theme = light ? 'light' : 'dark';
+      if (light) {
+        document.documentElement.style.setProperty('--panel', 'rgba(245,247,255,.92)');
+        document.documentElement.style.setProperty('--panel-solid', '#edf0fa');
+        document.documentElement.style.setProperty('--text', '#182033');
+        document.documentElement.style.setProperty('--muted', '#59647a');
+        document.documentElement.style.setProperty('--line', 'rgba(20,30,55,.16)');
+        document.getElementById('desktop').style.background =
+          'radial-gradient(ellipse at 18% 18%, rgba(160,180,245,.7), transparent 38%), linear-gradient(135deg,#dce5f7,#cbd9ed)';
+        document.getElementById('taskbar').style.background = 'rgba(235,240,250,.82)';
+        document.querySelectorAll('.desktop-icon').forEach(el => el.style.color = '#172033');
+        document.querySelector('.desktop-label').style.color = '#26334d';
+      } else {
+        document.documentElement.style.setProperty('--panel', 'rgba(20, 27, 43, .88)');
+        document.documentElement.style.setProperty('--panel-solid', '#171f31');
+        document.documentElement.style.setProperty('--text', '#f4f6ff');
+        document.documentElement.style.setProperty('--muted', '#aab3c8');
+        document.documentElement.style.setProperty('--line', 'rgba(255,255,255,.12)');
+        document.getElementById('desktop').style.background =
+          'radial-gradient(ellipse at 18% 18%, rgba(87,112,190,.42), transparent 38%), radial-gradient(ellipse at 85% 75%, rgba(43,135,145,.28), transparent 36%), linear-gradient(135deg,#111827 0%,#17233b 52%,#101a2b 100%)';
+        document.getElementById('taskbar').style.background = 'rgba(10,14,24,.72)';
+        document.querySelectorAll('.desktop-icon').forEach(el => el.style.color = '#eef1ff');
+        document.querySelector('.desktop-label').style.color = 'rgba(255,255,255,.8)';
+      }
+    }
+
+    document.querySelectorAll('[data-app]').forEach(button => {
+      button.addEventListener('click', () => openApp(button.dataset.app));
+    });
+    document.getElementById('start-button').addEventListener('click', (e) => {
+      e.stopPropagation();
+      startMenu.classList.toggle('open');
+    });
+    document.addEventListener('click', (e) => {
+      if (!startMenu.contains(e.target) && e.target.id !== 'start-button') startMenu.classList.remove('open');
+    });
+
+    function updateClock() {
+      const now = new Date();
+      const time = now.toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      const date = now.toLocaleDateString('id-ID', { day: '2-digit', month: 'short' });
+      document.getElementById('clock').innerHTML = `${time}<br><span style="opacity:.65">${date}</span>`;
+    }
+    updateClock();
+    setInterval(updateClock, 1000);
+  </script>
+</body>
+</html>
